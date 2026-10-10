@@ -1,110 +1,159 @@
 # Job Scraper
 
-A Python-based project for collecting and organizing job listings from online sources.
+Bot de automatización para recopilar ofertas de empleo utilizando **Playwright**, almacenarlas en una base de datos **SQLite** y enviarlas automáticamente a un bot de **Telegram**.
 
-This repository is designed to help automate the process of scraping job opportunities, extracting useful fields such as title, company, location, salary, and posting URL, and saving the data in a structured format for later analysis.
+La configuración del bot se define mediante un archivo JSON. Además, las credenciales de Telegram deben configurarse mediante variables de entorno en un archivo `.env` para mantenerlas protegidas.
 
-## Features
+## Tecnologías
 
-- Scrape job postings from public job boards or websites
-- Extract structured data from listings
-- Save results to CSV, JSON, or a database
-- Filter jobs by keywords, location, or role
-- Easy to extend for new sources or scraping logic
+- [Python](https://www.python.org/)
+- [Playwright](https://playwright.dev/python/)
+- SQLite
+- JSON
+- Telegram Bot API
 
-## Project Goals
+## Características
 
-This project aims to:
+- Automatización del navegador con Playwright
+- Scraping de ofertas de empleo
+- Persistencia de datos mediante SQLite
+- Configuración del bot a través de un archivo JSON
+- Envío automático de las ofertas recopiladas a Telegram
+- Uso de variables de entorno para proteger las credenciales del bot
 
-- simplify job market research
-- automate repetitive data collection tasks
-- help track opportunities across multiple sources
-- provide a reusable base for future scraping improvements
+## Requisitos
 
-## Tech Stack
-
-- Python
-- Requests
-- BeautifulSoup / Playwright / Selenium (depending on the target site)
-- CSV/JSON export support
-
-## Repository Structure
-
-```text
-job_scraper/
-├── README.md
-├── requirements.txt
-├── scraper.py
-├── jobs.csv
-├── config.py
-├── utils/
-│   ├── __init__.py
-│   └── parser.py
-└── data/
-    └── extracted_jobs.json
-```
-
-> Note: The exact file structure may vary depending on how the project evolves.
-
-## Getting Started
-
-### Prerequisites
-
-- Python 3.10 or newer
+- Python 3.9 o superior
 - pip
-- Internet access for scraping target sites
+- Navegador compatible con Playwright
+- Un bot de Telegram creado mediante [BotFather](https://t.me/BotFather)
+- El `chat_id` de Telegram donde se enviarán las ofertas
 
-### Installation
+## Instalación
+
+Clona el repositorio y accede a su directorio:
 
 ```bash
 git clone https://github.com/davidG199/job_scraper.git
 cd job_scraper
+```
+
+Crea y activa un entorno virtual:
+
+```bash
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
+
+En Linux o macOS:
+
+```bash
+source .venv/bin/activate
+```
+
+En Windows:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+Instala las dependencias del proyecto:
+
+```bash
 pip install -r requirements.txt
 ```
 
-### Running the Scraper
+Instala los navegadores necesarios para Playwright:
 
 ```bash
-python scraper.py
+playwright install
 ```
 
-If your project includes a CLI or specific script names, adapt the command accordingly.
+## Variables de entorno
 
-## Configuration
+Antes de ejecutar el bot, crea un archivo llamado `.env` en la raíz del proyecto:
 
-Common configuration values may include:
+```env
+TELEGRAM_TOKEN=tu_token_del_bot
+TELEGRAM_CHAT_ID=tu_chat_id
+```
 
-- target job sites
-- keywords to search
-- location filters
-- output file path
-- delay between requests to respect rate limits
+El archivo `.env` debe mantenerse privado y no debe subirse al repositorio. Añádelo al archivo `.gitignore` junto con cualquier base de datos local que no quieras compartir:
 
-Store these values in a configuration file or environment variables, especially when running scraper jobs at scale.
+```gitignore
+.env
+*.db
+```
 
-## Best Practices
+El `TELEGRAM_TOKEN` es el token proporcionado por BotFather. El `TELEGRAM_CHAT_ID` corresponde al chat, grupo o canal donde el bot publicará las ofertas.
 
-- Respect robots.txt and the terms of service of the sites you scrape
-- Add delays between requests to avoid overwhelming target sites
-- Use user agents responsibly and avoid abusive scraping patterns
-- Handle rate limits and temporary errors gracefully
-- Store data securely and only use it for legitimate purposes
+## Configuración JSON
 
-## License
+El comportamiento del scraper se controla mediante un archivo JSON. En él se pueden definir los parámetros necesarios para la ejecución, como búsquedas, filtros, páginas objetivo y la configuración de Telegram.
 
-This project does not currently include a license file. If you plan to publish or share it publicly, consider adding an appropriate license such as MIT or Apache 2.0.
+Ejemplo:
 
-## Contributing
+```json
+{
+  "keywords": ["python", "backend"],
+  "location": "Remote",
+  "max_pages": 5,
+  "headless": true,
+  "database": "jobs.db",
+  "telegram": {
+    "token": "${TELEGRAM_TOKEN}",
+    "chat_id": "${TELEGRAM_CHAT_ID}"
+  }
+}
+```
 
-Contributions are welcome. If you want to improve the scraper:
+> Los nombres y valores disponibles dependen de la implementación actual del bot. Utiliza el archivo de configuración JSON incluido en el proyecto como referencia.
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+> No escribas credenciales reales directamente en archivos que vayan a compartirse o subirse al repositorio. Utiliza las variables definidas en `.env`.
 
-## Notes
+## Flujo de ejecución
 
-This README is a starting point for the repository and can be expanded as the project grows. If the scraper adds more modules, a CLI, tests, or data pipelines, this document should be updated to reflect the current architecture and usage.
+El bot realiza las siguientes acciones:
+
+1. Lee la configuración del archivo JSON.
+2. Abre el navegador utilizando Playwright.
+3. Busca y extrae las ofertas de empleo configuradas.
+4. Guarda las ofertas en la base de datos SQLite.
+5. Envía las ofertas guardadas al bot de Telegram utilizando el token y el `chat_id` configurados.
+
+## Ejecución
+
+Ejecuta el archivo principal del bot:
+
+```bash
+python <archivo_principal>.py
+```
+
+Reemplaza `<archivo_principal>.py` por el nombre real del archivo de entrada del proyecto.
+
+## Base de datos
+
+Las ofertas se almacenan en SQLite, por lo que no es necesario configurar un servidor de base de datos externo.
+
+La base de datos puede consultarse con cualquier herramienta compatible con SQLite:
+
+```bash
+sqlite3 jobs.db
+```
+
+## Buenas prácticas
+
+- Mantén el archivo `.env` fuera del control de versiones.
+- No compartas el token del bot de Telegram.
+- No sobrecargues los sitios web consultados.
+- Configura pausas entre solicitudes cuando sea necesario.
+- Maneja adecuadamente los errores de conexión, scraping y envío a Telegram.
+- Verifica que el bot tenga permisos para enviar mensajes al `chat_id` configurado.
+
+## Contribuir
+
+Si quieres mejorar el proyecto:
+
+1. Haz un fork del repositorio.
+2. Crea una rama para tus cambios.
+3. Implementa y prueba las mejoras.
+4. Envía un pull request.
