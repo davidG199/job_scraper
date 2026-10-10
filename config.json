@@ -1,0 +1,29 @@
+{
+  "keywords": [
+    "Tiempo completo",
+    "Sin experiencia"
+  ],
+  "locations": [
+    "Medellín",
+    "Envigado",
+    "Sabaneta",
+    "Itagüí"
+  ],
+  "modalities": [
+    "Remoto",
+    "Híbrido",
+    "Presencial"
+  ],
+  "telegram": {
+    "bot_token": "${TELEGRAM_BOT_TOKEN}",
+    "chat_id": "${TELEGRAM_CHAT_ID}"
+  },
+  "database_path": "jobs.sqlite3",
+  "headless": true,
+  "request_delay_seconds": 2.0,
+  "max_keywords": null,
+  "max_locations": null,
+  "max_jobs_per_query": 20,
+  "notification_delay_seconds": 4.0,
+  "telegram_max_retries": 3
+}
