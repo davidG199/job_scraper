@@ -15,6 +15,7 @@ from database import JobDatabase
 from scrapers import ComputrabajoScraper, IndeedScraper, LinkedInScraper
 from telegram_notifier import (
     TelegramRateLimitError,
+    TelegramTransientError,
     send_job_notification,
 )
 
@@ -164,6 +165,25 @@ async def main() -> None:
                             wait_seconds,
                             attempt + 1,
                             max_telegram_retries,
+                        )
+                        await asyncio.sleep(wait_seconds)
+                    except TelegramTransientError as exc:
+                        if attempt >= max_telegram_retries:
+                            LOGGER.error(
+                                "Se agotaron los reintentos por error temporal "
+                                "de Telegram para %s",
+                                job.get("link"),
+                            )
+                            break
+                        # Retroceso incremental: 2, 4, 8 segundos, etc.
+                        wait_seconds = exc.retry_after * (2**attempt)
+                        LOGGER.warning(
+                            "Error temporal de Telegram; reintentando en %d "
+                            "segundos (%d/%d): %s",
+                            wait_seconds,
+                            attempt + 1,
+                            max_telegram_retries,
+                            exc,
                         )
                         await asyncio.sleep(wait_seconds)
                     except Exception:

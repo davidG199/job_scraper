@@ -18,6 +18,14 @@ class TelegramRateLimitError(RuntimeError):
         self.retry_after = max(retry_after, 1)
 
 
+class TelegramTransientError(RuntimeError):
+    """Error temporal de Telegram o de la conexión HTTP."""
+
+    def __init__(self, description: str, retry_after: int = 2) -> None:
+        super().__init__(description)
+        self.retry_after = max(retry_after, 1)
+
+
 def _configured_value(value: str) -> str:
     """Permite usar valores literales o referencias ${ENV_VAR} en config.json."""
     if value.startswith("${") and value.endswith("}"):
@@ -58,21 +66,41 @@ async def send_job_notification(
         message = message[:4080] + "\n…"
     endpoint = f"https://api.telegram.org/bot{token}/sendMessage"
     async with httpx.AsyncClient(timeout=timeout_seconds) as client:
-        response = await client.post(
-            endpoint,
-            data={
-                "chat_id": destination,
-                "text": message,
-                "parse_mode": "HTML",
-                "disable_web_page_preview": "false",
-            },
-        )
-        payload = response.json()
+        try:
+            response = await client.post(
+                endpoint,
+                data={
+                    "chat_id": destination,
+                    "text": message,
+                    "parse_mode": "HTML",
+                    "disable_web_page_preview": "false",
+                },
+            )
+        except httpx.TimeoutException as exc:
+            raise TelegramTransientError(
+                "Timeout esperando respuesta de Telegram"
+            ) from exc
+        except httpx.RequestError as exc:
+            raise TelegramTransientError(
+                f"Error de red comunicando con Telegram: {exc}"
+            ) from exc
+
+        try:
+            payload = response.json()
+        except ValueError:
+            payload = {}
         if response.status_code == 429:
             retry_after = payload.get("parameters", {}).get("retry_after", 1)
             raise TelegramRateLimitError(
                 int(retry_after),
                 payload.get("description", "Telegram rate limit exceeded"),
+            )
+        if response.status_code in {502, 503, 504}:
+            raise TelegramTransientError(
+                payload.get(
+                    "description",
+                    f"Telegram respondió HTTP {response.status_code}",
+                )
             )
         if response.is_error or not payload.get("ok"):
             description = payload.get("description", response.text)
